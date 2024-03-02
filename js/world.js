@@ -17,7 +17,7 @@ class World{
 
         this.envelopes = [];
         this.roadBorders = [];
-        this.buidings = [];
+        this.buildings = [];
         this.trees = [];
         this.laneGuides = [];
         this.markings = [];
@@ -25,6 +25,27 @@ class World{
         this.frameCount = 0;
 
         this.generate();
+    }
+
+    static load(info)
+    {
+        const world = new World(new Graph());
+        world.graph = Graph.load(info.graph);
+        world.roadRoundness = info.roadRoundness;
+        world.roadWidth = info.roadWidth;
+        world.buildingMinLength = info.buildingMinLength;
+        world.buildingWidth = info.buildingWidth;
+        world.spacing = info.spacing;
+        world.treeSize = info.treeSize;
+        world.envelopes = info.envelopes.map((e) => Envelope.load(e));
+        world.roadBorders = info.roadBorders.map((b) => new Segment(b.p1, b.p2));
+        world.buildings = info.buildings.map((b) => Building.load(b));
+        world.trees = info.trees.map((t) => new Tree(t.center, info.treeSize));
+        world.laneGuides = info.laneGuides.map((g) => new Segment(g.p1, g.p2));
+        world.markings = info.markings.map((m) => Marking.load(m));
+        world.zoom = info.zoom;
+        world.offset = info.offset;
+        return world;
     }
 
     generate()
@@ -37,7 +58,7 @@ class World{
             );
         }
         this.roadBorders = Polygon.union(this.envelopes.map((e) => e.poly));
-        this.buildings = this.#generateBuidings();
+        this.buildings = this.#generatebuildings();
         this.trees = this.#generateTrees();
 
         this.laneGuides.length = 0;
@@ -135,7 +156,7 @@ class World{
         return trees;
     }
 
-    #generateBuidings()
+    #generatebuildings()
     {
         const tmpEnvelopes = [];
         for(const seg of this.graph.segments)
@@ -211,19 +232,22 @@ class World{
         const subset = [];
         for (const point of this.graph.points)
         {
-            let degree = 0;
+            // let degree = 0;
             for (const seg of this.graph.segments)
             {
                 if (seg.includes(point))
                 {
-                    degree++;
+                    // degree++;
+                    break;
                 }
             }
-
-            if (degree > 2)
-            {
+            //bug found here... sometimes degree never reached more than 2 making bubset returns empty and 
+            //letting #updateLights() crash on new Point stantiation because point is null
+            // if (degree > 0) 
+            // {
+                // console.log("degree: " + degree);
                 subset.push(point);
-            }
+            // }
         }
         return subset;
     }
@@ -232,7 +256,7 @@ class World{
     {
         const lights = this.markings.filter((m) => m instanceof Light);
         const controlCenters = [];
-        for (const light of lights)
+        for(const light of lights)
         {
             const point = getNearestPoint(light.center, this.#getIntersections());
             let controlCenter = controlCenters.find((c) => c.equals(point));
@@ -282,6 +306,7 @@ class World{
     draw(ctx, viewPoint)
     {
         this.#updateLights();
+
         for(const env of this.envelopes)
         {
             env.draw(ctx, { fill: "#BBB", stroke: "#BBB", lineWidth: 15 });
