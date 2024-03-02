@@ -102,9 +102,4 @@ class MarkingEditor{
             this.intent.draw(this.ctx);
         }
     }
-
-    draw(ctx)
-    {
-        this.draw(ctx);
-    }
 }
