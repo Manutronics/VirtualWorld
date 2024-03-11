@@ -15,6 +15,8 @@
             </label>
             <button onclick="openOsmPanel()">🗺️</button> 
             &nbsp;
+            <button id="noneBtn" onclick="toggleGarphEnabled()">N</button>
+            &nbsp;
             <button id="graphBtn" onclick="setMode('graph')">🌐</button>
             <button id="stopBtn" onclick="setMode('stop')" >🛑</button>
             <button id="crossingBtn" onclick="setMode('crossing')" >🚶</button>
@@ -43,8 +45,9 @@
         <script src="js/markings/light.js"></script>
         <script src="js/markings/target.js"></script>
         <script src="js/markings/yield.js"></script>
-        <script src="js/editors/graphEditor.js"></script>
         <script src="js/editors/markingEditor.js"></script>
+        <script src="js/editors/noneEditor.js"></script>
+        <script src="js/editors/graphEditor.js"></script>
         <script src="js/editors/startEditor.js"></script>
         <script src="js/editors/stopEditor.js"></script>
         <script src="js/editors/crossingEditor.js"></script>
@@ -62,9 +65,10 @@
         <script src="js/primitives/segment.js"></script>
         <script src="js/primitives/envelope.js"></script>
 
-        <script src="saves/big_with_target.world"></script>
+        <!-- <script src="saves/big_with_target.world"></script> -->
         <!--<script src="saves/big.world"></script>-->
         <!-- <script src="saves/bh.world"></script> -->
+        <script src="saves/dijkstra.world"></script>
 
         <script>
             myCanvas.width = 1200;
@@ -78,13 +82,19 @@
             const tools = {
                 graph: { button: graphBtn, editor: new GraphEditor(viewport, graph) },
                 stop: { button: stopBtn, editor: new StopEditor(viewport, world) },
-                // crossing: { button: crossingBtn, editor: new CrossingEditor(viewport, world) },
+                crossing: { button: crossingBtn, editor: new CrossingEditor(viewport, world) },
                 start: { button: startBtn, editor: new StartEditor(viewport, world) },
                 parking: { button: parkingBtn, editor: new ParkingEditor(viewport, world) },
                 light: { button: lightBtn, editor: new LightEditor(viewport, world) },
                 target: { button: targetBtn, editor: new TargetEditor(viewport, world) },
                 yield: { button: yieldBtn, editor: new YieldEditor(viewport, world) }
             };
+
+            const ctrl = {
+                none: { button: noneBtn, editor: new NoneEditor(viewport, graph) }
+            };
+            ctrl['none'].button.style.backgroundColor = 'gray';
+            ctrl['none'].button.style.filter = "grayscale(100%)";
 
             let oldGraphHash = graph.hash();
 
@@ -95,9 +105,9 @@
             function animate()
             {
                 viewport.reset();
-                if(graph.hash() != oldGraphHash)
+                if((graph.hash() != oldGraphHash))
                 {
-                    world.generate();
+                    world.generate(ctrl['none'].editor.isEnabled());
                     oldGraphHash = graph.hash();
                 }
                 const viewPoint = scale(viewport.getOffset(), -1);
@@ -149,6 +159,22 @@
                 tools[mode].button.style.filter = "";
                 tools[mode].editor.enable();
                        
+            }
+
+            function toggleGarphEnabled()
+            {
+                if(!ctrl['none'].editor.isEnabled())
+                {
+                    ctrl['none'].button.style.backgroundColor = 'white';
+                    ctrl['none'].button.style.filter = "";
+                    ctrl['none'].editor.enable();
+                }
+                else
+                {
+                    ctrl['none'].button.style.backgroundColor = 'gray';
+                    ctrl['none'].button.style.filter = "grayscale(100%)";
+                    ctrl['none'].editor.disable();
+                }
             }
 
             function disableEditors()
